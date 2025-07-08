@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sci‑Fi Status Page</title>
+        <style>
+            .wrap {
+                display: flex;
+                gap: 60px;
+                align-items: center;
+            }
+            .icon {
+                position: relative;
+                width: 300px;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            canvas {
+                position: absolute;
+                top: 0;
+                inset: 0;
+                z-index: 0;
+            }
+            .circle {
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                background: #2ecc71;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 2;
+            }
+            .circle span {
+                font-size: 4rem;
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div>
+            <h1 class="status">ONLINE</h1>
+            <h2>As of&nbsp;13&nbsp;minutes&nbsp;ago</h2>
+        </div>
+        <div class="icon">
+            <canvas id="circuit" width="300" height="100"></canvas>
+            <div class="circle">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="125"
+                    height="90"
+                    viewBox="0 0 125 90"
+                >
+                    <polygon
+                        points="15,30 45,60 105,0 120,15 45,90 0,45"
+                        fill="#fff"
+                    />
+                </svg>
+            </div>
+        </div>
+
+        <script>
+            /* ---- CSS‑driven constants ---- */
+            const GRID = 24;
+            const BUS_GAP = 8;
+            const LINE_W = 4;
+            const LINE_COL = "#333";
+
+            const canvas = document.getElementById("circuit");
+            const ctx = canvas.getContext("2d");
+
+            const W = 300;
+            let H = 100;
+            const LEVELS = 6; // traces each side of centre
+
+            const used = new Set();
+            const key = (x, y) => `${x}|${y}`;
+            const mark = (x, y) => used.add(key(x, y));
+
+            function drawTrace(
+                startX,
+                startY,
+                dirX,
+                dirY,
+                straightSteps,
+                diagLimit,
+                bendChance,
+            ) {
+                let x = startX,
+                    y = startY;
+                let diagCount = 0;
+                let justDiag = false; // prevents consecutive diagonal moves
+
+                ctx.beginPath();
+                ctx.moveTo(x + 0.5, y + 0.5);
+                mark(x, y);
+
+                for (let step = 0; step < 120; ++step) {
+                    let dx = 0,
+                        dy = dirY * GRID;
+
+                    // decide if we take a single diagonal hop this iteration
+                    if (
+                        step >= straightSteps &&
+                        dirX !== 0 &&
+                        diagCount < diagLimit &&
+                        !justDiag &&
+                        Math.random() < bendChance
+                    ) {
+                        dx = dirX * GRID;
+                        diagCount++;
+                        justDiag = true; // next step must be vertical
+                    } else {
+                        justDiag = false;
+                    }
+
+                    const nx = x + dx,
+                        ny = y + dy;
+                    if (
+                        nx < 0 ||
+                        nx > W ||
+                        ny < 0 ||
+                        ny > H ||
+                        used.has(key(nx, ny))
+                    )
+                        break;
+
+                    ctx.lineTo(nx + 0.5, ny + 0.5);
+                    mark(nx, ny);
+                    x = nx;
+                    y = ny;
+                }
+                ctx.stroke();
+            }
+
+            /* ---- build whole bus ---- */
+            function build() {
+                ctx.clearRect(0, 0, W, H);
+                used.clear();
+                const centreX = W / 2;
+                ctx.lineWidth = LINE_W;
+                ctx.strokeStyle = LINE_COL;
+
+                const topPos = H / 2 - 50;
+                const bottomPos = H / 2 + 50;
+
+                // centre line (pure vertical)
+                drawTrace(centreX, topPos, 0, -1, 99, 0, 0);
+                drawTrace(centreX, bottomPos, 0, 1, 99, 0, 0);
+
+                const baseStraight = 2; // outermost vertical run (grid steps)
+                const extraPerLvl = 1; // additional vertical run towards centre
+                const bendChance = 0.6; // probability to branch when allowed
+
+                for (let lvl = 1; lvl <= LEVELS; ++lvl) {
+                    const offset = lvl * BUS_GAP;
+                    const straightZone =
+                        baseStraight + (LEVELS - lvl) * extraPerLvl;
+                    const diagLimit = lvl <= 2 ? 1 : lvl <= 4 ? 2 : 3; // 1 for inner, 2 mid, 3 outer
+
+                    // LEFT
+                    drawTrace(
+                        centreX - offset,
+                        topPos,
+                        -1,
+                        -1,
+                        straightZone,
+                        diagLimit,
+                        bendChance,
+                    );
+                    drawTrace(
+                        centreX - offset,
+                        bottomPos,
+                        -1,
+                        1,
+                        straightZone,
+                        diagLimit,
+                        bendChance,
+                    );
+
+                    // RIGHT
+                    drawTrace(
+                        centreX + offset,
+                        topPos,
+                        1,
+                        -1,
+                        straightZone,
+                        diagLimit,
+                        bendChance,
+                    );
+                    drawTrace(
+                        centreX + offset,
+                        bottomPos,
+                        1,
+                        1,
+                        straightZone,
+                        diagLimit,
+                        bendChance,
+                    );
+                }
+            }
+
+            function onResize() {
+                canvas.height = window.innerHeight;
+                H = window.innerHeight;
+                build();
+            }
+            window.addEventListener("resize", onResize);
+            onResize();
+        </script>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
+</html>
