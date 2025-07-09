@@ -41,10 +41,11 @@ data "archive_file" "public_info" {
   type        = "zip"
   output_path = ".terraform/public_info.zip"
   source_dir  = "functions/public_info"
+  excludes    = [".venv/", ".ropeproject/"]
 }
 
 resource "google_storage_bucket_object" "source_object" {
-  name   = "function-source.zip"
+  name   = "${data.archive_file.public_info.output_sha256}.zip"
   bucket = google_storage_bucket.source.name
   source = data.archive_file.public_info.output_path
 }
@@ -92,4 +93,25 @@ resource "google_api_gateway_gateway" "gateway" {
   provider   = google-beta
   api_config = google_api_gateway_api_config.status_api_config.id
   gateway_id = "status-gateway"
+}
+
+resource "google_firestore_database" "database" {
+  name        = "status-db"
+  location_id = var.region
+  type        = "FIRESTORE_NATIVE"
+}
+
+resource "google_service_account" "functions_account" {
+  account_id   = "functions-account"
+  display_name = "Cloud Functions Service Account"
+}
+
+resource "google_project_iam_member" "functions_account_firestore_member" {
+  project = var.project_id
+  role    = "roles/datastore.owner"
+  member  = "serviceAccount:${google_service_account.functions_account.email}"
+}
+
+resource "google_service_account_key" "functions_account_key" {
+  service_account_id = google_service_account.functions_account.name
 }
