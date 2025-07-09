@@ -1,0 +1,20 @@
+swagger: "2.0"
+info:
+  title: simulo-status-api
+  version: 1.0.0
+
+schemes:
+  - https
+
+paths:
+  /public-info:
+    get:
+      summary: Get public status information
+      operationId: getPublicInfo
+      x-google-backend:
+        address: https://REGION-PROJECTID.cloudfunctions.net/public-info
+      responses:
+        "200":
+          description: A successful response containing public status information.
+          schema:
+            type: string
