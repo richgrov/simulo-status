@@ -1,0 +1,11 @@
+[Unit]
+Description=Simulo Status Logging Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env python3 /home/ubuntu/logger/log.py
+EnvironmentFile=/home/ubuntu/logger/environment.d
+User=ubuntu
+StandardOutput=journal
