@@ -66,10 +66,17 @@ def log(request: Request):
         assert isinstance(public_key_pem, str)
 
         message = key + value
-        if verify_signature(public_key_pem, message, signature):
-            return "ok", 200
-        else:
+        if not verify_signature(public_key_pem, message, signature):
             return "unauthorized", 401
+
+        db.collection("logs").add({
+            "id": id,
+            "key": key,
+            "value": value,
+            "timestamp": firestore.SERVER_TIMESTAMP
+        })
+
+        return "ok", 200
 
     except Exception as e:
         print(f"Internal server error: {e}")
