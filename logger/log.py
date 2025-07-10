@@ -48,8 +48,7 @@ def post_log(key: str, value: str):
     print(f"[{datetime.now().isoformat()}] Sent status '{value}', response: {response.status_code} {response.text}")
 
 def main():
-    #status = get_service_status()
-    status = "online"
+    status = get_service_status()
     post_log("service", status)
 
 if __name__ == "__main__":
