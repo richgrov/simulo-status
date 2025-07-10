@@ -63,6 +63,9 @@ resource "google_cloudfunctions2_function" "default" {
         object = google_storage_bucket_object.source_object.name
       }
     }
+    environment_variables = {
+      TARGET_STATUS = "online"
+    }
   }
 
   service_config {
