@@ -102,12 +102,15 @@ resource "google_api_gateway_api" "status_api" {
 resource "google_api_gateway_api_config" "status_api_config" {
   provider      = google-beta
   api           = google_api_gateway_api.status_api.api_id
-  api_config_id = "status-api-config"
+  api_config_id = "gateway-config-${filesha1("functions/spec.yaml")}"
   openapi_documents {
     document {
       path     = "spec.yaml"
       contents = filebase64("functions/spec.yaml")
     }
+  }
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
