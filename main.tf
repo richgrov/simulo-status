@@ -40,8 +40,8 @@ resource "google_storage_bucket" "source" {
 data "archive_file" "public_info" {
   type        = "zip"
   output_path = ".terraform/public_info.zip"
-  source_dir  = "functions/public_info"
-  excludes    = [".venv/", ".ropeproject/"]
+  source_dir  = "functions"
+  excludes    = [".venv/", ".ropeproject/", "__pycache__/"]
 }
 
 resource "google_storage_bucket_object" "source_object" {
