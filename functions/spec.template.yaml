@@ -18,3 +18,14 @@ paths:
           description: A successful response containing public status information.
           schema:
             type: string
+  /log:
+    get:
+      summary: Get log backend infrastructre state
+      operationId: getLogInfo
+      x-google-backend:
+        address: https://REGION-PROJECTID.cloudfunctions.net/log
+      responses:
+        "200":
+          description: The information was logged
+          schema:
+            type: string

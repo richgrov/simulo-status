@@ -56,7 +56,29 @@ resource "google_cloudfunctions2_function" "default" {
   description = "Public status information"
   build_config {
     runtime     = "python310"
-    entry_point = "main"
+    entry_point = "public_info"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.source.name
+        object = google_storage_bucket_object.source_object.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count = 1
+    available_memory   = "256M"
+    timeout_seconds    = 5
+  }
+}
+
+resource "google_cloudfunctions2_function" "log" {
+  name        = "log"
+  location    = var.region
+  description = "Log backend infrastructre state"
+  build_config {
+    runtime     = "python310"
+    entry_point = "log"
     source {
       storage_source {
         bucket = google_storage_bucket.source.name
