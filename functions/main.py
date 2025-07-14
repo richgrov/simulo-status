@@ -1,5 +1,4 @@
 import base64
-import os
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
@@ -8,8 +7,6 @@ import functions_framework
 from google.cloud import firestore
 
 db = firestore.Client(database="status-db")
-
-TARGET_STATUS = os.environ.get("TARGET_STATUS")
 
 def verify_signature(public_key_pem: str, message: str, signature_b64: str) -> bool:
     public_key = serialization.load_pem_public_key(public_key_pem.encode("utf-8"))
@@ -36,7 +33,7 @@ def public_info(_: Request):
         return jsonify({"status": "fault"}), 200
 
     doc = docs[0]
-    if doc.get("value") != TARGET_STATUS:
+    if doc.get("value") != "active":
         return jsonify({"status": "fault"}), 200
 
     return jsonify({"status": "ok"}), 200
