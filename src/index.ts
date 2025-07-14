@@ -5,7 +5,7 @@ const statusText = document.getElementById("status-text")!;
 const statusTime = document.getElementById("status-time")!;
 
 try {
-    const response = await fetch(import.meta.env.VITE_BACKEND_URL);
+    const response = await fetch(process.env.VITE_BACKEND_URL);
     const data = await response.json();
 
     if (data.status === "ok") {
