@@ -28,7 +28,7 @@ jobs:
       - name: Build project
         env:
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
-        run: bun build index.html --outdir=dist
+        run: bun build index.html --outdir=dist --env="VITE_*"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
