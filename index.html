@@ -3,7 +3,8 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Sci‑Fi Status Page</title>
+        <title>Simulo Status</title>
+        <script src="/src/index.ts" type="module"></script>
         <style>
             .wrap {
                 display: flex;
@@ -42,8 +43,8 @@
     </head>
     <body>
         <div>
-            <h1 class="status">ONLINE</h1>
-            <h2>As of&nbsp;13&nbsp;minutes&nbsp;ago</h2>
+            <h1 id="status-text">LOADING...</h1>
+            <h2 id="status-time"></h2>
         </div>
         <div class="icon">
             <canvas id="circuit" width="300" height="100"></canvas>
@@ -211,6 +212,5 @@
             window.addEventListener("resize", onResize);
             onResize();
         </script>
-        <script type="module" src="/src/main.tsx"></script>
     </body>
 </html>

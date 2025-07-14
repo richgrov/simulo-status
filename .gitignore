@@ -30,3 +30,5 @@ functions/spec.yaml
 terraform.tfstate
 terraform.tfstate.backup
 terraform.tfvars
+
+.env

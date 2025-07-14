@@ -29,6 +29,7 @@ protobuf==6.31.1
 pyasn1==0.6.1
 pyasn1-modules==0.4.2
 pycparser==2.22
+python-dotenv==1.1.1
 requests==2.32.4
 rsa==4.9.1
 urllib3==2.5.0

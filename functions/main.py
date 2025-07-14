@@ -1,12 +1,18 @@
 import base64
+import os
+import datetime
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
 from flask import Request, jsonify
 import functions_framework
 from google.cloud import firestore
+from dotenv import load_dotenv
+
+load_dotenv()
 
 db = firestore.Client(database="status-db")
+CORS_ORIGIN = os.environ.get("CORS_ORIGIN")
 
 def verify_signature(public_key_pem: str, message: str, signature_b64: str) -> bool:
     public_key = serialization.load_pem_public_key(public_key_pem.encode("utf-8"))
@@ -20,23 +26,56 @@ def verify_signature(public_key_pem: str, message: str, signature_b64: str) -> b
         print(f"Verification failed: {e}")
         return False
 
+def pluralize(count: int, word: str) -> str:
+    if count == 1:
+        return f"{word}"
+    else:
+        return f"{word}s"
+
+
+def format_duration(duration: datetime.timedelta) -> str:
+    if duration.seconds < 60:
+        secs = duration.seconds
+        return f"{secs} {pluralize(secs, 'second')} ago"
+    elif duration.seconds < 3600:
+        mins = duration.seconds // 60
+        return f"{mins} {pluralize(mins, 'minute')} ago"
+    else:
+        hours = duration.seconds // 3600
+        return f"{hours} {pluralize(hours, 'hour')} ago"
+
 
 @functions_framework.http
-def public_info(_: Request):
+def public_info(req: Request):
+    if req.method == "OPTIONS":
+        return "ok", 200, {
+            "Access-Control-Allow-Origin": CORS_ORIGIN,
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Headers": "Content-Type"
+        }
+
     docs = (db.collection("logs")
-        .select(["name", "value"])
+        .select(["name", "value", "timestamp"])
         .order_by("timestamp", direction=firestore.Query.DESCENDING)
         .limit(1)
         .get())
 
-    if len(docs) == 0:
-        return jsonify({"status": "fault"}), 200
+    headers = {
+        "Access-Control-Allow-Origin": CORS_ORIGIN,
+    }
 
     doc = docs[0]
-    if doc.get("value") != "active":
-        return jsonify({"status": "fault"}), 200
 
-    return jsonify({"status": "ok"}), 200
+    timestamp = doc.get("timestamp")
+    assert isinstance(timestamp, datetime.datetime)
+    
+    duration = datetime.datetime.now(datetime.timezone.utc) - timestamp
+    duration_str = format_duration(duration)
+
+    if doc.get("value") != "active":
+        return jsonify({"status": "fault", "since": duration_str}), 200, headers
+
+    return jsonify({"status": "ok", "since": duration_str}), 200, headers
 
 
 @functions_framework.http
