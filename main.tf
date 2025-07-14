@@ -8,6 +8,27 @@ variable "region" {
   description = "Google Cloud Region"
 }
 
+variable "cors_origin" {
+  type        = string
+  description = "CORS_ORIGIN environment variable for public-info function"
+}
+
+resource "google_secret_manager_secret" "cors_origin" {
+  secret_id = "cors_origin"
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "cors_origin_version" {
+  secret      = google_secret_manager_secret.cors_origin.id
+  secret_data = var.cors_origin
+}
+
 terraform {
   required_providers {
     google = {
@@ -41,7 +62,7 @@ data "archive_file" "public_info" {
   type        = "zip"
   output_path = ".terraform/public_info.zip"
   source_dir  = "functions"
-  excludes    = [".venv/", ".ropeproject/", "__pycache__/"]
+  excludes    = [".venv/", ".ropeproject/", "__pycache__/", ".env"]
 }
 
 resource "google_storage_bucket_object" "source_object" {
@@ -69,6 +90,13 @@ resource "google_cloudfunctions2_function" "default" {
     max_instance_count = 1
     available_memory   = "256M"
     timeout_seconds    = 5
+    secret_environment_variables {
+      project_id = var.project_id
+      key        = "CORS_ORIGIN"
+      secret     = google_secret_manager_secret.cors_origin.secret_id
+      version    = "latest"
+    }
+    service_account_email = google_service_account.functions_account.email
   }
 }
 
@@ -88,9 +116,10 @@ resource "google_cloudfunctions2_function" "log" {
   }
 
   service_config {
-    max_instance_count = 1
-    available_memory   = "256M"
-    timeout_seconds    = 5
+    max_instance_count    = 1
+    available_memory      = "256M"
+    timeout_seconds       = 5
+    service_account_email = google_service_account.functions_account.email
   }
 }
 
@@ -134,6 +163,12 @@ resource "google_service_account" "functions_account" {
 resource "google_project_iam_member" "functions_account_firestore_member" {
   project = var.project_id
   role    = "roles/datastore.owner"
+  member  = "serviceAccount:${google_service_account.functions_account.email}"
+}
+
+resource "google_project_iam_member" "functions_account_secret_manager_member" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
   member  = "serviceAccount:${google_service_account.functions_account.email}"
 }
 
