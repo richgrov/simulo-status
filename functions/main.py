@@ -70,6 +70,9 @@ def public_info(req: Request):
     assert isinstance(timestamp, datetime.datetime)
     
     duration = datetime.datetime.now(datetime.timezone.utc) - timestamp
+    if duration.total_seconds() > 60 * 25:
+        return jsonify({"status": "fault"}), 200, headers
+
     duration_str = format_duration(duration)
 
     if doc.get("value") != "active":
