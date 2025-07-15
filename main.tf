@@ -141,6 +141,11 @@ resource "google_api_gateway_api_config" "status_api_config" {
   lifecycle {
     create_before_destroy = true
   }
+  gateway_config {
+    backend_config {
+      google_service_account = google_service_account.gateway_account.email
+    }
+  }
 }
 
 resource "google_api_gateway_gateway" "gateway" {
@@ -175,3 +180,23 @@ resource "google_project_iam_member" "functions_account_secret_manager_member" {
 resource "google_service_account_key" "functions_account_key" {
   service_account_id = google_service_account.functions_account.name
 }
+
+resource "google_service_account" "gateway_account" {
+  account_id   = "gateway-account"
+  display_name = "Gateway Service Account"
+}
+
+resource "google_project_iam_member" "gateway_account_cloud_run_member" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${google_service_account.gateway_account.email}"
+}
+
+resource "google_cloudfunctions2_function_iam_member" "invoker" {
+  project        = var.project_id
+  location       = var.region
+  cloud_function = google_cloudfunctions2_function.default.name
+  role           = "roles/cloudfunctions.invoker"
+  member         = "serviceAccount:${google_service_account.gateway_account.email}"
+}
+
