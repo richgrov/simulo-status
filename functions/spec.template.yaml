@@ -20,7 +20,7 @@ paths:
             type: string
   /log:
     post:
-      summary: Get log backend infrastructre state
+      summary: Get log backend infrastructure state
       operationId: getLogInfo
       x-google-backend:
         address: https://REGION-PROJECTID.cloudfunctions.net/log
