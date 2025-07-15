@@ -2,7 +2,7 @@
 Description=Simulo Log Service Timer
 
 [Timer]
-OnCalendar=hourly
+OnCalendar=*:0/20
 Persistent=true
 
 [Install]
