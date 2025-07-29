@@ -29,3 +29,24 @@ paths:
           description: The information was logged
           schema:
             type: string
+  /private-info:
+    options:
+      summary: Support CORS preflight requests
+      operationId: optionsPrivateInfo
+      x-google-backend:
+        address: https://REGION-PROJECTID.cloudfunctions.net/private-info
+      responses:
+        "200":
+          description: Always returned
+          schema:
+            type: string
+    post:
+      summary: Get private status information
+      operationId: getPrivateInfo
+      x-google-backend:
+        address: https://REGION-PROJECTID.cloudfunctions.net/private-info
+      responses:
+        "200":
+          description: The information was logged
+          schema:
+            type: string
