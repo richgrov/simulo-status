@@ -90,12 +90,15 @@ def public_info(req: Request):
                 ok = True
             elif metric == "cpu_percent" and all(0 <= v <= 100 for v in value):
                 ok = True
-            elif metric == "max_ram" and value > 0:
-                ok = True
-            elif metric == "ram_used" and value >= 0:
-                ok = True
-            elif metric == "ram_free" and value >= 0:
-                ok = True
+            elif metric == "memory":
+                total = value.get("total")
+                used = value.get("used")
+                free = value.get("free")
+                if not isinstance(total, int) or not isinstance(used, int) or not isinstance(free, int):
+                    return jsonify({"status": "fault"}), 200, headers
+
+                if 0 <= used < total and 0 < free <= total:
+                    ok = True
 
     duration_str = format_duration(quickest_since)
 
@@ -142,7 +145,7 @@ def log(request: Request):
         for key, value in logs:
             if not isinstance(key, str) or \
                 not isinstance(value, (str, int, float, bool, list, dict)) or \
-                key not in ["service", "cpu_percent", "max_ram", "ram_used", "ram_free"]:
+                key not in ["service", "cpu_percent", "memory"]:
                 print(f"invalid log entry: {key} {value}")
                 return "bad request", 400
 

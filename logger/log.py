@@ -59,9 +59,7 @@ def main():
     post_log([
         ("service", status),
         ("cpu_percent", cpus_percent),
-        ("max_ram", vram.total),
-        ("ram_used", vram.used),
-        ("ram_free", vram.free)
+        ("memory", {"total": vram.total, "used": vram.used, "free": vram.free})
     ])
 
 if __name__ == "__main__":
