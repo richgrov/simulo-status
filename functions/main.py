@@ -1,6 +1,7 @@
 import base64
 import os
 import datetime
+import json
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
@@ -92,34 +93,44 @@ def log(request: Request):
     try:
         id = data.get("id")
         signature = data.get("signature")
-        key = data.get("key")
-        value = data.get("value")
+        logs = data.get("logs")
 
-        if not all([id, signature, key, value]):
+        if not isinstance(id, str) or not isinstance(signature, str) or not isinstance(logs, str):
             return "bad request", 400
 
-        doc_ref = db.collection("machines").document(id)
-        doc = doc_ref.get()
-
+        doc = db.collection("machines").document(id).get()
         if not doc.exists:
             return "machine not found", 404
 
         public_key_pem = doc.get("public_key")
         assert isinstance(public_key_pem, str)
 
-        message = key + value
+        message = id + logs
         if not verify_signature(public_key_pem, message, signature):
             return "unauthorized", 401
 
-        db.collection("logs").add({
-            "id": id,
-            "key": key,
-            "value": value,
-            "timestamp": firestore.SERVER_TIMESTAMP
-        })
+        try:
+            logs = json.loads(logs)
+        except Exception as e:
+            print(f"failed to parse logs: {e}")
+            return "bad request", 400
+
+        for key, value in logs:
+            if not isinstance(key, str) or \
+                not isinstance(value, (str, int, float, bool, list, dict)) or \
+                key not in ["serivce", "cpu_percent", "max_ram", "ram_used", "ram_free"]:
+                print(f"invalid log entry: {key} {value}")
+                return "bad request", 400
+
+            db.collection("logs").add({
+                "id": id,
+                "key": key,
+                "value": value,
+                "timestamp": firestore.SERVER_TIMESTAMP
+            })
 
         return "ok", 200
 
     except Exception as e:
-        print(f"Internal server error: {e}")
+        print(f"internal server error: {e}")
         return "internal server error", 500

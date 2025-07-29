@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import base64
 import subprocess
+from typing import Tuple
+import psutil
 import requests
 from datetime import datetime
 from cryptography.hazmat.primitives import serialization
@@ -34,22 +37,32 @@ def sign_message(message: str) -> str:
     signature = private_key.sign(message.encode("utf-8"))
     return base64.b64encode(signature).decode("utf-8")
 
-def post_log(key: str, value: str):
-    message = key + value
-    signature_b64 = sign_message(message)
+def post_log(entries: Tuple[str, str]):
+    logs = [[key, value] for key, value in entries]
+    logs_str = json.dumps(logs)
+
     payload = {
         "id": BACKEND_ID,
-        "key": key,
-        "value": value,
-        "signature": signature_b64
+        "signature": sign_message(BACKEND_ID + logs_str),
+        "logs": logs_str
     }
 
     response = requests.post(LOG_ENDPOINT + "/log", json=payload)
-    print(f"[{datetime.now().isoformat()}] Sent status '{value}', response: {response.status_code} {response.text}")
+    print(f"[{datetime.now().isoformat()}] Sent status '{logs_str}', response: {response.status_code} {response.text}")
 
 def main():
     status = get_service_status()
-    post_log("service", status)
+
+    cpus_percent = psutil.cpu_percent(interval=1, percpu=True)
+    vram = psutil.virtual_memory()
+
+    post_log([
+        ("service", status),
+        ("cpu_percent", cpus_percent),
+        ("max_ram", vram.total),
+        ("ram_used", vram.used),
+        ("ram_free", vram.free)
+    ])
 
 if __name__ == "__main__":
     log_endpoint = os.environ.get("SIMULO_STATUS_API")
