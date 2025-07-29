@@ -2,6 +2,7 @@ import base64
 import os
 import datetime
 import json
+import hashlib
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
@@ -14,6 +15,7 @@ load_dotenv()
 
 db = firestore.Client(database="status-db")
 CORS_ORIGIN = os.environ.get("CORS_ORIGIN")
+ADMIN_PASSWORD_HASH = os.environ.get("PRIVATE_PASSWORD_HASH")
 
 def verify_signature(public_key_pem: str, message: str, signature_b64: str) -> bool:
     public_key = serialization.load_pem_public_key(public_key_pem.encode("utf-8"))
@@ -169,3 +171,59 @@ def log(request: Request):
     except Exception as e:
         print(f"internal server error: {e}")
         return "internal server error", 500
+
+
+@functions_framework.http
+def private_info(req: Request):
+    if req.method == "OPTIONS":
+        return "ok", 200, {
+            "Access-Control-Allow-Origin": CORS_ORIGIN,
+            "Access-Control-Allow-Methods": "POST",
+            "Access-Control-Allow-Headers": "Content-Type"
+        }
+
+    headers = {
+        "Access-Control-Allow-Origin": CORS_ORIGIN,
+    }
+
+    if req.method != "POST":
+        return "method not allowed", 405, headers
+
+    data = req.get_json(force=True)
+    password = data.get("password")
+    if not isinstance(password, str):
+        return "bad request", 400, headers
+
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    if password_hash != ADMIN_PASSWORD_HASH:
+        return "unauthorized", 401, headers
+
+    try:
+        machines_data = []
+        
+        for machine in db.collection("machines").stream():
+            machine_id = machine.id
+            machine_metrics = {}
+            
+            for collection in machine.reference.collections():
+                if not collection.id.startswith("metric_"):
+                    continue
+                
+                metric_name = collection.id.removeprefix("metric_")
+                
+                docs = collection.order_by("timestamp").limit(50).get()
+                machine_metrics[metric_name] = [
+                    [doc.get("value"), doc.get("timestamp")]
+                    for doc in docs
+                ]
+            
+            machines_data.append({
+                "id": machine_id,
+                "metrics": machine_metrics
+            })
+        
+        return jsonify(machines_data), 200, headers
+        
+    except Exception as e:
+        print(f"Error retrieving private info: {e}")
+        return "internal server error", 500, headers
