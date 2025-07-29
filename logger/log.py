@@ -55,11 +55,13 @@ def main():
 
     cpus_percent = psutil.cpu_percent(interval=1, percpu=True)
     vram = psutil.virtual_memory()
+    disk = psutil.disk_usage("/")
 
     post_log([
         ("service", status),
         ("cpu_percent", cpus_percent),
-        ("memory", {"total": vram.total, "used": vram.used, "free": vram.free})
+        ("memory", {"total": vram.total, "used": vram.used, "free": vram.free}),
+        ("disk", {"total": disk.total, "used": disk.used, "free": disk.free})
     ])
 
 if __name__ == "__main__":

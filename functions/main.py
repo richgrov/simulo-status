@@ -100,6 +100,16 @@ def public_info(req: Request):
                 if 0 <= used < total and 0 < free <= total:
                     ok = True
 
+            elif metric == "disk":
+                total = value.get("total")
+                used = value.get("used")
+                free = value.get("free")
+                if not isinstance(total, int) or not isinstance(used, int) or not isinstance(free, int):
+                    return jsonify({"status": "fault"}), 200, headers
+
+                if 0 <= used < total and 0 < free <= total:
+                    ok = True
+
     duration_str = format_duration(quickest_since)
 
     if ok:
@@ -145,7 +155,7 @@ def log(request: Request):
         for key, value in logs:
             if not isinstance(key, str) or \
                 not isinstance(value, (str, int, float, bool, list, dict)) or \
-                key not in ["service", "cpu_percent", "memory"]:
+                key not in ["service", "cpu_percent", "memory", "disk"]:
                 print(f"invalid log entry: {key} {value}")
                 return "bad request", 400
 
