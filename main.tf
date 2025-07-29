@@ -13,6 +13,11 @@ variable "cors_origin" {
   description = "CORS_ORIGIN environment variable for public-info function"
 }
 
+variable "private_password_hash" {
+  type        = string
+  description = "SHA256 hash of private info password"
+}
+
 resource "google_secret_manager_secret" "cors_origin" {
   secret_id = "cors_origin"
   replication {
@@ -27,6 +32,22 @@ resource "google_secret_manager_secret" "cors_origin" {
 resource "google_secret_manager_secret_version" "cors_origin_version" {
   secret      = google_secret_manager_secret.cors_origin.id
   secret_data = var.cors_origin
+}
+
+resource "google_secret_manager_secret" "private_password_hash" {
+  secret_id = "private_password_hash"
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "private_password_hash_version" {
+  secret      = google_secret_manager_secret.private_password_hash.id
+  secret_data = var.private_password_hash
 }
 
 terraform {
@@ -192,10 +213,53 @@ resource "google_project_iam_member" "gateway_account_cloud_run_member" {
   member  = "serviceAccount:${google_service_account.gateway_account.email}"
 }
 
+resource "google_cloudfunctions2_function" "private_info" {
+  name        = "private-info"
+  location    = var.region
+  description = "Private status information with authentication"
+  build_config {
+    runtime     = "python310"
+    entry_point = "private_info"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.source.name
+        object = google_storage_bucket_object.source_object.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count = 1
+    available_memory   = "256M"
+    timeout_seconds    = 10
+    secret_environment_variables {
+      project_id = var.project_id
+      key        = "CORS_ORIGIN"
+      secret     = google_secret_manager_secret.cors_origin.secret_id
+      version    = "latest"
+    }
+    secret_environment_variables {
+      project_id = var.project_id
+      key        = "PRIVATE_PASSWORD_HASH"
+      secret     = google_secret_manager_secret.private_password_hash.secret_id
+      version    = "latest"
+    }
+    service_account_email = google_service_account.functions_account.email
+  }
+}
+
 resource "google_cloudfunctions2_function_iam_member" "invoker" {
   project        = var.project_id
   location       = var.region
   cloud_function = google_cloudfunctions2_function.default.name
+  role           = "roles/cloudfunctions.invoker"
+  member         = "serviceAccount:${google_service_account.gateway_account.email}"
+}
+
+resource "google_cloudfunctions2_function_iam_member" "private_info_invoker" {
+  project        = var.project_id
+  location       = var.region
+  cloud_function = google_cloudfunctions2_function.private_info.name
   role           = "roles/cloudfunctions.invoker"
   member         = "serviceAccount:${google_service_account.gateway_account.email}"
 }
