@@ -263,4 +263,3 @@ resource "google_cloudfunctions2_function_iam_member" "private_info_invoker" {
   role           = "roles/cloudfunctions.invoker"
   member         = "serviceAccount:${google_service_account.gateway_account.email}"
 }
-
