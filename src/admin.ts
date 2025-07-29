@@ -31,15 +31,19 @@ async function fetchPrivateData(password: string) {
 function addMetric(
   metric: string,
   values: [any, string][],
+  admin: HTMLElement,
 ): HTMLElement | undefined {
   let yValues: number[][] = [];
   let yMin = 0;
   let yMax = 0;
   let colors: LineColor[] = [];
   let labels: string[] = [];
+  let metricDisplay = "";
 
   switch (metric) {
     case "service":
+      metricDisplay = "SERVICE ACTIVE";
+
       yValues = [values.map((value) => (value[0] === "active" ? 1 : 0))];
       yMin = 0;
       yMax = 1;
@@ -53,6 +57,8 @@ function addMetric(
       break;
 
     case "cpu_percent":
+      metricDisplay = "CPU PERCENT";
+
       if (values.length === 0) {
         return;
       }
@@ -75,6 +81,8 @@ function addMetric(
       break;
 
     case "memory":
+      metricDisplay = "MEMORY MB";
+
       if (values.length === 0) {
         return;
       }
@@ -104,6 +112,8 @@ function addMetric(
       break;
 
     case "disk":
+      metricDisplay = "DISK GB";
+
       if (values.length === 0) {
         return;
       }
@@ -152,7 +162,10 @@ function addMetric(
         `;
   section.prepend(graph);
 
-  return section;
+  const header = document.createElement("h2");
+  header.textContent = metricDisplay;
+  admin.appendChild(header);
+  admin.appendChild(section);
 }
 
 async function initAdmin() {
@@ -192,13 +205,7 @@ async function initAdmin() {
     for (const machine of response) {
       for (const metric in machine.metrics) {
         const values = machine.metrics[metric] as [any, string][];
-        const section = addMetric(metric, values);
-        if (section) {
-          const header = document.createElement("h2");
-          header.textContent = metric;
-          admin.appendChild(header);
-          admin.appendChild(section);
-        }
+        addMetric(metric, values, admin);
       }
     }
   } catch (error) {
