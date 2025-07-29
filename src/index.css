@@ -21,6 +21,20 @@ body {
   align-items: center;
 }
 
+@font-face {
+  font-family: "ApexMk2";
+  src: url("assets/ApexMk2-Regular.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "ApexMk2";
+  src: url("assets/ApexMk2-BoldExtended.otf") format("opentype");
+  font-weight: bold;
+  font-style: normal;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
