@@ -129,3 +129,45 @@ button:focus-visible {
   margin: 2rem;
   padding: 1rem;
 }
+
+#admin h2 {
+  text-align: center;
+}
+
+#admin .graph-section {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+#admin .legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#admin .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+#admin .legend-item div {
+  width: 32px;
+  height: 32px;
+}
+
+#admin .legend-item p {
+  margin: 0;
+}
+
+@media (max-width: 840px) {
+  #admin .graph-section {
+    flex-direction: column;
+  }
+
+  #admin .legend {
+    flex-direction: row;
+    gap: 1rem;
+  }
+}

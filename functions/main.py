@@ -213,7 +213,7 @@ def private_info(req: Request):
                 
                 docs = collection.order_by("timestamp").limit(50).get()
                 machine_metrics[metric_name] = [
-                    [doc.get("value"), doc.get("timestamp")]
+                    [doc.get("value"), doc.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")]
                     for doc in docs
                 ]
             
