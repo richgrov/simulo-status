@@ -118,7 +118,7 @@ def log(request: Request):
         for key, value in logs:
             if not isinstance(key, str) or \
                 not isinstance(value, (str, int, float, bool, list, dict)) or \
-                key not in ["serivce", "cpu_percent", "max_ram", "ram_used", "ram_free"]:
+                key not in ["service", "cpu_percent", "max_ram", "ram_used", "ram_free"]:
                 print(f"invalid log entry: {key} {value}")
                 return "bad request", 400
 
