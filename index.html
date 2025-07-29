@@ -25,17 +25,17 @@
         inset: 0;
         z-index: 0;
       }
-      .circle {
+      #circle {
         width: 150px;
         height: 150px;
         border-radius: 50%;
-        background: #2ecc71;
+        background-color: gray;
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 2;
       }
-      .circle span {
+      #circle span {
         font-size: 4rem;
         color: #fff;
       }
@@ -48,14 +48,39 @@
     </div>
     <div class="icon">
       <canvas id="circuit" width="300" height="100"></canvas>
-      <div class="circle">
+      <div id="circle">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="125"
-          height="90"
+          width="125px"
+          height="90px"
           viewBox="0 0 125 90"
+          id="check-icon"
+          style="display: none"
         >
           <polygon points="15,30 45,60 105,0 120,15 45,90 0,45" fill="#fff" />
+        </svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="125px"
+          height="90px"
+          viewBox="0 0 125 90"
+          id="warning-icon"
+          style="display: none"
+        >
+          <polygon points="50,0 75,0 67,50 58,50" fill="#fff" />
+          <polygon points="52,69 73,69 73,90 52,90" fill="#fff" />
+        </svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          height="150px"
+          viewBox="0 -960 960 960"
+          id="x-icon"
+          style="display: none"
+        >
+          <path
+            d="m336-280-56-56 144-144-144-143 56-56 144 144 143-144 56 56-144 143 144 144-56 56-143-144-144 144Z"
+            fill="#fff"
+          />
         </svg>
       </div>
     </div>
