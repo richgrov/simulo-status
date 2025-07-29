@@ -55,31 +55,54 @@ def public_info(req: Request):
             "Access-Control-Allow-Headers": "Content-Type"
         }
 
-    docs = (db.collection("logs")
-        .select(["name", "value", "timestamp"])
-        .order_by("timestamp", direction=firestore.Query.DESCENDING)
-        .limit(1)
-        .get())
-
     headers = {
         "Access-Control-Allow-Origin": CORS_ORIGIN,
     }
 
-    doc = docs[0]
+    quickest_since = None
+    ok = False
 
-    timestamp = doc.get("timestamp")
-    assert isinstance(timestamp, datetime.datetime)
-    
-    duration = datetime.datetime.now(datetime.timezone.utc) - timestamp
-    if duration.total_seconds() > 60 * 25:
-        return jsonify({"status": "fault"}), 200, headers
+    for machine in db.collection("machines").stream():
+        for collection in machine.reference.collections():
+            if not collection.id.startswith("metric_"):
+                continue
 
-    duration_str = format_duration(duration)
+            metric = collection.id.removeprefix("metric_")
 
-    if doc.get("value") != "active":
+            docs = collection.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1).get()
+            if not docs or len(docs) == 0:
+                return jsonify({"status": "fault"}), 200, headers
+            
+            doc = docs[0]
+
+            timestamp = doc.get("timestamp")
+            assert isinstance(timestamp, datetime.datetime)
+            duration = datetime.datetime.now(datetime.timezone.utc) - timestamp
+            if duration.total_seconds() > 60 * 25:
+                return jsonify({"status": "fault"}), 200, headers
+
+            if quickest_since is None or duration < quickest_since:
+                quickest_since = duration
+
+            value = doc.get("value")
+
+            if metric == "service" and value == "active":
+                ok = True
+            elif metric == "cpu_percent" and all(0 <= v <= 100 for v in value):
+                ok = True
+            elif metric == "max_ram" and value > 0:
+                ok = True
+            elif metric == "ram_used" and value >= 0:
+                ok = True
+            elif metric == "ram_free" and value >= 0:
+                ok = True
+
+    duration_str = format_duration(quickest_since)
+
+    if ok:
+        return jsonify({"status": "ok", "since": duration_str}), 200, headers
+    else:
         return jsonify({"status": "fault", "since": duration_str}), 200, headers
-
-    return jsonify({"status": "ok", "since": duration_str}), 200, headers
 
 
 @functions_framework.http
@@ -98,7 +121,8 @@ def log(request: Request):
         if not isinstance(id, str) or not isinstance(signature, str) or not isinstance(logs, str):
             return "bad request", 400
 
-        doc = db.collection("machines").document(id).get()
+        doc_ref = db.collection("machines").document(id)
+        doc = doc_ref.get()
         if not doc.exists:
             return "machine not found", 404
 
@@ -122,9 +146,7 @@ def log(request: Request):
                 print(f"invalid log entry: {key} {value}")
                 return "bad request", 400
 
-            db.collection("logs").add({
-                "id": id,
-                "key": key,
+            doc_ref.collection("metric_" + key).add({
                 "value": value,
                 "timestamp": firestore.SERVER_TIMESTAMP
             })
