@@ -4,6 +4,9 @@ const MACHINE_SLOTS = 10;
 const MEGABYTE = 1024 * 1024;
 const GIGABYTE = 1024 * 1024 * 1024;
 
+const adminPassword =
+  document.querySelector<HTMLInputElement>("#admin-password")!;
+
 async function fetchPrivateData(password: string) {
   try {
     const response = await fetch(process.env.VITE_PRIVATE_URL!, {
@@ -156,15 +159,10 @@ async function initAdmin() {
   const admin = document.getElementById("admin")!;
   admin.style.display = "block";
 
-  const password = prompt("Enter admin password:");
-  if (!password) {
-    return;
-  }
-
   admin.innerHTML = `<div class="loading">Loading...</div>`;
 
   try {
-    const response = await fetchPrivateData(password);
+    const response = await fetchPrivateData(adminPassword.value);
 
     let machines = response
       .map((machine: any) => machine.id)
@@ -209,4 +207,4 @@ async function initAdmin() {
   }
 }
 
-document.getElementById("status-text")!.addEventListener("dblclick", initAdmin);
+adminPassword.addEventListener("change", initAdmin);

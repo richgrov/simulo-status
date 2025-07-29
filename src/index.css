@@ -69,6 +69,18 @@ button:focus-visible {
   src: url(assets/ApexMk2-Regular.otf) format("opentype");
 }
 
+#admin-password {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  margin: 0;
+  font-size: 1.5rem;
+  color: transparent;
+}
+
 #admin {
   display: none;
   position: absolute;
