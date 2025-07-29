@@ -1,5 +1,4 @@
-import './App.css';
-import './index.css';
+import "./index.css";
 
 const statusText = document.getElementById("status-text")!;
 const statusTime = document.getElementById("status-time")!;
