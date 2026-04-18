@@ -9,7 +9,9 @@ const warningIcon = document.getElementById("warning-icon")!;
 const xIcon = document.getElementById("x-icon")!;
 
 try {
-  const response = await fetch(process.env.VITE_BACKEND_URL);
+  const response = await fetch(process.env.VITE_BACKEND_URL, {
+    signal: AbortSignal.timeout(10000),
+  });
   const data = await response.json();
 
   if (data.status === "ok") {
